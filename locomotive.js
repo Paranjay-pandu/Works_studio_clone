@@ -37,7 +37,7 @@ const scroll = new LocomotiveScroll({
   container: document,
   el: document.querySelector("#main"),
   smooth: true,
-  lerp: 0.03,
+  lerp: 0.06,
 });
 
 const page = document.querySelector("#page2");
