@@ -92,5 +92,34 @@ tl.to(".curtain", { yPercent: -100, duration: 1.2, delay: 0.5 })
 - No reduced-motion handling; hover-only reveals.
 - Cards use inline-style hover listeners that a CSS `:hover` rule would replace.
 
-## 8. Reporting
+## 8. Web-researched best practices (checked Oct 2026; verify API details in official docs)
+Sources are mostly community guides plus the W3C and Motion.dev docs; treat exact API names as "confirm in docs before use".
+
+**Performance**
+- Compositor-friendly properties: `transform`, `opacity`, and generally `filter` and `clip-path`. Animating `width/height/top/left/margin/padding` re-runs style, layout and paint every frame. ([Motion tier list](https://motion.dev/blog/web-animation-performance-tier-list), [Front-End Checklist](https://frontendchecklist.io/rules/css/animation-performance))
+- Browsers can silently fall back to the main thread (Safari especially). Animate whole `transform`, not individual transform shorthands, when GPU acceleration matters. ([Motion performance docs](https://motion.dev/docs/performance))
+- Each compositor animation makes a layer. On phones, many layers, such as long duplicated marquee tracks, can exhaust GPU memory. Keep marquee copies to the minimum that fills the width and test on a mid-range Android. ([Motion](https://motion.dev/docs/performance))
+- Core Web Vitals mapping (thresholds: LCP <= 2.5s, INP <= 200ms, CLS <= 0.1; confirm on web.dev): the LCP element must paint in its final position with motion starting after paint; keep scroll/pointer handlers and rAF loops light for INP; avoid entrance animations, pinning and `will-change` that reflow content (CLS). ([community guide](https://github.com/Laith0003/ux-skill/wiki/How-to-add-motion-that-doesnt-break-Core-Web-Vitals))
+- Use `will-change` sparingly and remove it after the animation. Set `pointer-events: none` on elements hidden with opacity so they cannot be clicked.
+
+**GSAP / ScrollTrigger**
+- Call `ScrollTrigger.refresh()` after layout-changing events (images, fonts, content load), debounced, not on every resize.
+- Kill tweens and ScrollTriggers on navigation or unmount; pause or kill off-screen work.
+- Use `gsap.matchMedia()` for breakpoint and reduced-motion variants; return cleanup from each context so changes revert automatically.
+- Test `scrub` smoothness on low-end devices.
+
+**Lenis (when chosen over Locomotive)**
+- Sync with ScrollTrigger: `lenis.on('scroll', ScrollTrigger.update)`, drive `lenis.raf` from `gsap.ticker`, and set `gsap.ticker.lagSmoothing(0)`. ([Lenis repo docs](https://docsearch.algolia.com/mcp/docs/repo/darkroomengineering/lenis))
+- Add `data-lenis-prevent` to inner scrollable regions (modals, menus) so they scroll natively.
+- Unresolved in research: reduced-motion and keyboard-focus behaviour of smooth scroll. Disable smooth scroll under `prefers-reduced-motion` and check focus and anchor jumps by hand.
+
+**Accessibility (WCAG 2.3.3, Level AAA, Animation from Interactions)**
+- Non-essential motion (parallax, hover effects, scroll-triggered transitions) must be disableable. The sufficient technique is the `prefers-reduced-motion` query (C39). ([W3C Understanding 2.3.3](https://w3c.github.io/wcag/understanding/animation-from-interactions))
+- Prefer the opt-in form: put meaningful motion inside `@media (prefers-reduced-motion: no-preference)`.
+- Reducing motion must never hide content. Consider a persistent on-page motion toggle for intense effects, since the OS setting is not always set.
+
+## 9. Cross-repo habit
+When starting an animation task in any repo: (1) check for `.claude/skills/animated-web` in the repo and read it; (2) if absent, copy this file in; (3) search the web for current best practices for the specific technique and library version before building, then append anything new and sourced to section 8.
+
+## 10. Reporting
 End each task with: what changed, how it was verified (commands/screenshots actually run), and remaining risks. Never claim motion "feels right"; state that it needs human review.
